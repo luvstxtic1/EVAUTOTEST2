@@ -34,6 +34,7 @@
 
 *{box-sizing:border-box;}
 html{scroll-behavior:smooth;}
+html,body{overflow-x:hidden;max-width:100%;}
 body{
   margin:0;
   font-family:var(--font-body);
@@ -143,7 +144,13 @@ button{font-family:inherit;cursor:pointer;}
 @media (max-width:900px){
   .nav-links{display:none;}
   .nav-toggle{display:inline-flex;}
-  .btn-phone span{display:none;}
+  .nav-cta .btn-phone span{display:none;}
+}
+@media (max-width:560px){
+  .nav{gap:10px;padding-left:16px;padding-right:16px;}
+  .nav-cta{gap:10px;}
+  .nav-cta .btn-primary{display:none;}
+  .brand img{height:32px;}
 }
 .mobile-menu{
   display:none;
@@ -216,9 +223,22 @@ section{padding:clamp(56px,9vw,110px) 0;}
 .hero-zip input{
   flex:1;background:transparent;border:none;color:var(--paper);
   padding:10px 16px;font-size:1rem;font-family:inherit;
+  min-width:0;
 }
 .hero-zip input::placeholder{color:rgba(255,255,255,.5);}
 .hero-zip input:focus{outline:none;}
+@media (max-width:420px){
+  .hero-zip{
+    flex-direction:column;border-radius:var(--radius-md);
+    background:transparent;border:none;padding:0;gap:10px;
+  }
+  .hero-zip input{
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.16);
+    border-radius:999px;padding:12px 18px;
+  }
+  .hero-zip .btn{width:100%;}
+}
 .hero-sub-row{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:center;margin-top:20px;}
 .hero-media{
   position:relative;border-radius:var(--radius-lg);overflow:hidden;
@@ -248,6 +268,7 @@ section{padding:clamp(56px,9vw,110px) 0;}
 /* ---------- damage picker ---------- */
 .damage-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
 @media (max-width:860px){.damage-grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:380px){.damage-grid{grid-template-columns:1fr;}}
 .damage-card{
   position:relative;
   text-align:left;
@@ -289,6 +310,7 @@ section{padding:clamp(56px,9vw,110px) 0;}
 /* ---------- insurance carrier picker ---------- */
 .insurer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
 @media (max-width:760px){.insurer-grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:380px){.insurer-grid{grid-template-columns:1fr;}}
 .insurer-card{
   display:flex;align-items:center;gap:10px;
   background:rgba(255,255,255,.05);
@@ -327,7 +349,7 @@ section{padding:clamp(56px,9vw,110px) 0;}
 .qw-panel{display:none;}
 .qw-panel.active{display:block;animation:qwfade .35s ease;}
 @keyframes qwfade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
-.qw-tabs{display:flex;gap:8px;margin-bottom:18px;}
+.qw-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
 .qw-tab{
   padding:.6em 1.1em;border-radius:999px;border:1px solid rgba(255,255,255,.18);
   background:transparent;color:var(--cream);font-size:.9rem;font-weight:500;

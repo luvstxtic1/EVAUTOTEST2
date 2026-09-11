@@ -339,22 +339,48 @@
       });
     });
 
-    // Manual dropdowns
+    // A broad set of makes/models sold in the US market, so the manual
+    // path covers effectively any car someone drives in — not just a
+    // handful of popular ones. (VIN decode via NHTSA still covers every
+    // registered vehicle exactly; this list is for manual entry only.)
     const MAKES_MODELS = {
-      Toyota: ['Camry', 'Corolla', 'RAV4', 'Tacoma', 'Highlander'],
-      Honda: ['Civic', 'Accord', 'CR-V', 'Pilot'],
-      Ford: ['F-150', 'Explorer', 'Escape', 'Mustang'],
-      Chevrolet: ['Silverado', 'Equinox', 'Malibu', 'Tahoe'],
-      Nissan: ['Altima', 'Rogue', 'Sentra', 'Frontier'],
-      Jeep: ['Grand Cherokee', 'Wrangler', 'Cherokee'],
-      Hyundai: ['Elantra', 'Tucson', 'Santa Fe'],
-      Kia: ['Sportage', 'Sorento', 'Optima']
+      Toyota: ['Camry', 'Corolla', 'RAV4', 'Highlander', 'Tacoma', 'Tundra', 'Sienna', '4Runner', 'Prius', 'Venza', 'Sequoia', 'Corolla Cross'],
+      Honda: ['Civic', 'Accord', 'CR-V', 'Pilot', 'HR-V', 'Odyssey', 'Ridgeline', 'Passport', 'Fit'],
+      Ford: ['F-150', 'F-250', 'Explorer', 'Escape', 'Edge', 'Mustang', 'Bronco', 'Expedition', 'Ranger', 'Maverick', 'Focus', 'Fusion'],
+      Chevrolet: ['Silverado', 'Equinox', 'Malibu', 'Tahoe', 'Suburban', 'Traverse', 'Colorado', 'Camaro', 'Trax', 'Blazer', 'Impala'],
+      GMC: ['Sierra', 'Terrain', 'Acadia', 'Yukon', 'Canyon'],
+      Ram: ['1500', '2500', '3500', 'ProMaster'],
+      Dodge: ['Charger', 'Challenger', 'Durango', 'Journey', 'Grand Caravan'],
+      Jeep: ['Grand Cherokee', 'Wrangler', 'Cherokee', 'Compass', 'Gladiator', 'Renegade'],
+      Chrysler: ['300', 'Pacifica', 'Voyager'],
+      Buick: ['Encore', 'Enclave', 'Envision'],
+      Cadillac: ['Escalade', 'XT5', 'CT5', 'XT4'],
+      Nissan: ['Altima', 'Rogue', 'Sentra', 'Frontier', 'Murano', 'Pathfinder', 'Titan', 'Maxima', 'Kicks', 'Versa', 'Armada'],
+      Infiniti: ['Q50', 'QX60', 'QX80', 'QX50'],
+      Hyundai: ['Elantra', 'Tucson', 'Santa Fe', 'Sonata', 'Palisade', 'Kona', 'Venue', 'Accent'],
+      Kia: ['Sportage', 'Sorento', 'Optima', 'Telluride', 'Soul', 'Forte', 'Seltos', 'Rio', 'Carnival'],
+      Genesis: ['G70', 'G80', 'GV70', 'GV80'],
+      Subaru: ['Outback', 'Forester', 'Crosstrek', 'Impreza', 'Ascent', 'Legacy', 'WRX'],
+      Mazda: ['CX-5', 'CX-9', 'Mazda3', 'CX-30', 'Mazda6', 'MX-5 Miata'],
+      Mitsubishi: ['Outlander', 'Eclipse Cross', 'Mirage', 'Outlander Sport'],
+      Volkswagen: ['Jetta', 'Tiguan', 'Atlas', 'Passat', 'Golf', 'Taos', 'ID.4'],
+      BMW: ['3 Series', '5 Series', 'X3', 'X5', 'X1', '7 Series', 'X7'],
+      'Mercedes-Benz': ['C-Class', 'E-Class', 'GLC', 'GLE', 'S-Class', 'GLA'],
+      Audi: ['A4', 'Q5', 'A6', 'Q7', 'Q3', 'A3'],
+      Lexus: ['RX', 'ES', 'NX', 'GX', 'IS', 'TX'],
+      Acura: ['MDX', 'RDX', 'TLX', 'Integra'],
+      Volvo: ['XC90', 'XC60', 'XC40', 'S60'],
+      'Land Rover': ['Range Rover', 'Range Rover Sport', 'Discovery', 'Defender'],
+      Jaguar: ['F-Pace', 'XF', 'E-Pace'],
+      Porsche: ['Cayenne', 'Macan', '911', 'Panamera'],
+      Mini: ['Cooper', 'Countryman', 'Clubman'],
+      Tesla: ['Model 3', 'Model Y', 'Model S', 'Model X', 'Cybertruck']
     };
     const yearSel = root.querySelector('[data-manual="year"]');
     const makeSel = root.querySelector('[data-manual="make"]');
     const modelSel = root.querySelector('[data-manual="model"]');
     const trimInput = root.querySelector('[data-manual="trim"]');
-    yearSel.innerHTML = '<option value="">Select year</option>' + Array.from({ length: 20 }, (_, i) => 2025 - i).map(y => `<option>${y}</option>`).join('');
+    yearSel.innerHTML = '<option value="">Select year</option>' + Array.from({ length: 34 }, (_, i) => 2027 - i).map(y => `<option>${y}</option>`).join('');
     makeSel.innerHTML = '<option value="">Select make</option>' + Object.keys(MAKES_MODELS).map(m => `<option>${m}</option>`).join('');
     makeSel.addEventListener('change', () => {
       const list = MAKES_MODELS[makeSel.value] || [];
@@ -482,7 +508,7 @@
     });
 
     // ---- Navigation ----
-    function showStep(n) {
+    function showStep(n, scroll = true) {
       state.step = n;
       root.querySelectorAll('.qw-panel').forEach(p => p.classList.toggle('active', +p.dataset.panel === n));
       root.querySelectorAll('[data-step-pill]').forEach(p => {
@@ -491,7 +517,7 @@
         p.classList.toggle('done', s < n);
       });
       if (n === STEP_COUNT) renderSummary();
-      root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (scroll) root.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     root.querySelectorAll('[data-next]').forEach(btn => {
       btn.addEventListener('click', () => showStep(state.step + 1));
@@ -520,7 +546,7 @@
       `;
     }
 
-    showStep(1);
+    showStep(1, false);
 
     // Expose a small API so hero forms can hand off a ZIP and jump in
     root.qwPrefillZip = (zip) => {
