@@ -254,16 +254,50 @@ section{padding:clamp(56px,9vw,110px) 0;}
   background:var(--paper);
   border:1.5px solid var(--line);
   border-radius:var(--radius-md);
-  padding:22px 18px;
+  padding:0;
+  overflow:hidden;
   cursor:pointer;
   transition:border-color .15s, transform .15s, box-shadow .15s;
 }
 .damage-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-sm);}
 .damage-card.selected{border-color:var(--green);box-shadow:0 0 0 3px rgba(143,225,58,.25);}
-.damage-card svg{width:34px;height:34px;margin-bottom:14px;color:var(--green-deep);}
-.damage-card.selected svg{color:var(--green-deep);}
-.damage-card .name{font-weight:600;font-size:1rem;}
-.damage-card .sub{font-size:.85rem;color:var(--ink-soft);margin-top:2px;}
+.damage-card-media{aspect-ratio:1/1;overflow:hidden;}
+.damage-card-media img{width:100%;height:100%;object-fit:cover;transition:transform .3s ease;}
+.damage-card:hover .damage-card-media img{transform:scale(1.04);}
+.damage-card-body{padding:14px 16px 18px;}
+.damage-card .name{font-weight:600;font-size:.98rem;}
+.damage-card .sub{font-size:.82rem;color:var(--ink-soft);margin-top:2px;}
+.damage-card.selected::after{
+  content:"✓";
+  position:absolute;top:10px;right:10px;
+  width:26px;height:26px;border-radius:50%;
+  background:var(--green);color:var(--green-ink);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;font-weight:700;
+}
+
+/* ---------- insurance carrier picker ---------- */
+.insurer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+@media (max-width:760px){.insurer-grid{grid-template-columns:repeat(2,1fr);}}
+.insurer-card{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,.05);
+  border:1.5px solid rgba(255,255,255,.14);
+  border-radius:var(--radius-sm);
+  padding:12px 14px;
+  color:var(--paper);
+  font-size:.88rem;font-weight:500;
+  text-align:left;
+  transition:border-color .15s, background .15s;
+}
+.insurer-card svg{width:20px;height:20px;flex:none;color:var(--cream);}
+.insurer-card:hover{border-color:rgba(143,225,58,.5);}
+.insurer-card.selected{
+  background:rgba(143,225,58,.14);
+  border-color:var(--green);
+  color:var(--paper);
+}
+.insurer-card.selected svg{color:var(--green);}
 
 .quote-widget{
   margin-top:32px;

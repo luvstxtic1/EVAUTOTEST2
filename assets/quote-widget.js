@@ -2,8 +2,7 @@
    EV AutoGlass — "Tell us what's wrong" quote flow
    Self-contained widget. Mount by adding:
      <div id="quote-widget-mount"></div>
-   anywhere on the page. Multiple mounts on one page are fine —
-   each gets its own isolated state via data-qw-id.
+   anywhere on the page.
    ========================================================= */
 
 (function () {
@@ -13,33 +12,37 @@
       id: 'front',
       name: 'Front Windshield',
       sub: 'Chip, crack, or full replace',
-      icon: `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 26 L9 10 Q10 8 12 8 H28 Q30 8 31 10 L35 26 Q35 28 33 28 H7 Q5 28 5 26 Z"/><path d="M20 8 V28 M9 17 H31"/></svg>`
+      img: 'https://d8j0ntlcm91z4.cloudfront.net/user_38jUgr17I6kW2g7ysqUa9OUVLGY/hf_20260911_215600_9e94c9c0-fc6a-4f71-a443-f1a7db80aa83.png'
     },
     {
       id: 'rear',
       name: 'Back Glass / Rear Window',
       sub: 'Rear windshield damage',
-      icon: `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 24 L10 12 Q11 10 13 10 H27 Q29 10 30 12 L34 24 Q34 26 32 26 H8 Q6 26 6 24 Z"/><path d="M13 10 L11 26 M27 10 L29 26"/></svg>`
+      img: 'https://d8j0ntlcm91z4.cloudfront.net/user_38jUgr17I6kW2g7ysqUa9OUVLGY/hf_20260911_215600_f8f0ebd0-ce0d-4d71-a0e6-151f942338c3.png'
     },
     {
       id: 'driver',
       name: 'Driver Side Window',
       sub: 'Door or quarter glass',
-      icon: `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="9" width="24" height="17" rx="2"/><path d="M6 26 L34 26 L30 33 H10 Z" stroke-linejoin="round"/><text x="18" y="20" font-size="9" fill="currentColor" stroke="none" font-family="sans-serif">L</text></svg>`
+      img: 'https://d8j0ntlcm91z4.cloudfront.net/user_38jUgr17I6kW2g7ysqUa9OUVLGY/hf_20260911_215600_2db5f880-ee1f-4978-846b-b8646b39d8d7.png'
     },
     {
       id: 'passenger',
       name: 'Passenger Side Window',
       sub: 'Door or quarter glass',
-      icon: `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="10" y="9" width="24" height="17" rx="2"/><path d="M6 26 L34 26 L30 33 H10 Z" stroke-linejoin="round"/><text x="19" y="20" font-size="9" fill="currentColor" stroke="none" font-family="sans-serif">R</text></svg>`
+      img: 'https://d8j0ntlcm91z4.cloudfront.net/user_38jUgr17I6kW2g7ysqUa9OUVLGY/hf_20260911_215600_7471d393-3179-4077-89aa-1b50b53a8c8b.png'
     }
   ];
 
-  const AZ_CITY_BY_ZIP_PREFIX = {
-    '850': 'Phoenix', '851': 'Phoenix', '853': 'Phoenix',
-    '852': 'Mesa', '858': 'Scottsdale', '857': 'Scottsdale',
-    '859': 'Anthem', '853': 'Maricopa', '852': 'Chandler', '85281': 'Tempe'
-  };
+  // Generic shield icon used for every carrier tile — no trademarked
+  // insurer logos are used here, only plain text names.
+  const SHIELD_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 3 6v6c0 5 3.8 9.4 9 10 5.2-.6 9-5 9-10V6z"/></svg>`;
+
+  const INSURERS = [
+    'State Farm', 'GEICO', 'Progressive', 'Allstate',
+    'USAA', 'Farmers', 'Nationwide', 'Liberty Mutual',
+    'Travelers', 'American Family', 'Other insurer', 'No insurance / self-pay'
+  ];
 
   function guessCity(zip) {
     if (!/^\d{5}$/.test(zip)) return null;
@@ -54,26 +57,62 @@
   }
 
   /* ---------------------------------------------------------
-     MOCK VIN DECODER
-     Swap this out for a real VIN-decode API (e.g. NHTSA vPIC)
-     when one is wired up. Contract: takes a 17-char VIN string,
-     returns { year, make, model, trim } or null if it can't decode.
-     Kept deterministic here so demos are consistent.
+     REAL VIN VALIDATION + DECODE
+
+     1) validateVINFormat / vinChecksumValid run entirely client-side
+        using the standard ISO 3779 transliteration + check-digit
+        algorithm, so obviously bogus input (wrong length, invalid
+        letters, failed check digit) is caught instantly with no
+        network call.
+     2) decodeVIN() then calls NHTSA's free, public "vPIC" VIN
+        decoder API (no key required, CORS-enabled) to get the
+        real year/make/model/trim for a VIN that passes validation.
+        This runs in the visitor's browser, not a mock.
   --------------------------------------------------------- */
-  function mockDecodeVIN(vin) {
-    if (!vin || vin.length !== 17) return null;
-    const makes = ['Toyota', 'Honda', 'Ford', 'Chevrolet', 'Nissan', 'Jeep', 'Hyundai', 'Kia'];
-    const models = { Toyota: 'Camry', Honda: 'Civic', Ford: 'F-150', Chevrolet: 'Silverado', Nissan: 'Altima', Jeep: 'Grand Cherokee', Hyundai: 'Elantra', Kia: 'Sportage' };
-    let seed = 0;
-    for (let i = 0; i < vin.length; i++) seed += vin.charCodeAt(i) * (i + 1);
-    const make = makes[seed % makes.length];
-    const year = 2013 + (seed % 13); // 2013–2025
-    const trims = ['LE', 'SE', 'Sport', 'Limited', 'XLE', 'Base'];
-    return { year, make, model: models[make], trim: trims[seed % trims.length] };
+  const VIN_TRANSLIT = {
+    A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8,
+    J: 1, K: 2, L: 3, M: 4, N: 5, P: 7, R: 9,
+    S: 2, T: 3, U: 4, V: 5, W: 6, X: 7, Y: 8, Z: 9
+  };
+  const VIN_WEIGHTS = [8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2];
+
+  function validateVINFormat(vin) {
+    if (!vin) return 'Enter a VIN.';
+    if (vin.length !== 17) return 'A VIN is exactly 17 characters.';
+    if (/[IOQ]/.test(vin)) return 'VINs never contain the letters I, O, or Q.';
+    if (!/^[A-Z0-9]{17}$/.test(vin)) return 'Only letters and numbers are allowed.';
+    return null;
+  }
+
+  function vinChecksumValid(vin) {
+    let sum = 0;
+    for (let i = 0; i < 17; i++) {
+      const ch = vin[i];
+      const value = /[0-9]/.test(ch) ? Number(ch) : (VIN_TRANSLIT[ch] || 0);
+      sum += value * VIN_WEIGHTS[i];
+    }
+    const remainder = sum % 11;
+    const expected = remainder === 10 ? 'X' : String(remainder);
+    return vin[8] === expected;
+  }
+
+  async function decodeVIN(vin) {
+    const url = `https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/${encodeURIComponent(vin)}?format=json`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('lookup-failed');
+    const data = await res.json();
+    const r = data.Results && data.Results[0];
+    if (!r || !r.Make || !r.ModelYear) return null;
+    return {
+      year: Number(r.ModelYear),
+      make: r.Make,
+      model: r.Model || '',
+      trim: r.Trim || r.Series || null
+    };
   }
 
   function likelyNeedsADAS(year) {
-    return year >= 2018;
+    return !!year && year >= 2018;
   }
 
   function el(html) {
@@ -90,11 +129,12 @@
         <div class="qw-steps">
           <span class="qw-step-pill" data-step-pill="1">1. Damage</span>
           <span class="qw-step-pill" data-step-pill="2">2. Vehicle</span>
-          <span class="qw-step-pill" data-step-pill="3">3. Location &amp; contact</span>
-          <span class="qw-step-pill" data-step-pill="4">4. Summary</span>
+          <span class="qw-step-pill" data-step-pill="3">3. Insurance</span>
+          <span class="qw-step-pill" data-step-pill="4">4. Location &amp; contact</span>
+          <span class="qw-step-pill" data-step-pill="5">5. Summary</span>
         </div>
 
-        <!-- STEP 1 -->
+        <!-- STEP 1: DAMAGE -->
         <div class="qw-panel" data-panel="1">
           <h3 class="h-3" style="color:#fff;margin-bottom:14px;">What's damaged?</h3>
           <div class="damage-grid" data-damage-grid></div>
@@ -104,7 +144,7 @@
           </div>
         </div>
 
-        <!-- STEP 2 -->
+        <!-- STEP 2: VEHICLE -->
         <div class="qw-panel" data-panel="2">
           <h3 class="h-3" style="color:#fff;margin-bottom:14px;">Identify your vehicle</h3>
           <div class="qw-tabs">
@@ -117,9 +157,9 @@
             <div class="field-row single">
               <div>
                 <label for="${uid}-vin">17-character VIN</label>
-                <input class="field" id="${uid}-vin" maxlength="17" placeholder="e.g. 1HGCM82633A004352" data-vin-input>
-                <div class="error-text">That doesn't look like a valid 17-character VIN.</div>
-                <p class="helper">Find it on your dashboard (driver's side, visible through the windshield) or on a sticker inside the driver-side door jamb.</p>
+                <input class="field" id="${uid}-vin" maxlength="17" placeholder="e.g. 1HGCM82633A004352" data-vin-input autocomplete="off" autocapitalize="characters">
+                <div class="error-text" data-vin-error>That doesn't look like a valid VIN.</div>
+                <p class="helper">Find it on your dashboard (driver's side, visible through the windshield) or on a sticker inside the driver-side door jamb. We look it up against the free NHTSA vehicle database — nothing is stored.</p>
               </div>
             </div>
             <button class="btn btn-line" style="color:#fff;border-color:rgba(255,255,255,.3);" data-decode-vin>Decode VIN</button>
@@ -165,6 +205,7 @@
               </div>
             </div>
             <button class="btn btn-line" style="color:#fff;border-color:rgba(255,255,255,.3);" data-decode-plate>Look up vehicle</button>
+            <p class="helper">Plate lookups require a state DMV data agreement we don't have wired up yet, so this gives an approximate match — a specialist confirms the exact trim when they call.</p>
             <div data-plate-result style="margin-top:16px;"></div>
           </div>
 
@@ -174,8 +215,25 @@
           </div>
         </div>
 
-        <!-- STEP 3 -->
+        <!-- STEP 3: INSURANCE -->
         <div class="qw-panel" data-panel="3">
+          <h3 class="h-3" style="color:#fff;margin-bottom:6px;">Who's your insurance with?</h3>
+          <p class="helper" style="margin-bottom:16px;">Most comprehensive policies cover glass at $0 out of pocket. We'll confirm your coverage before any work starts.</p>
+          <div class="insurer-grid" data-insurer-grid></div>
+          <div class="field-row single" data-insurer-other-row style="display:none;margin-top:14px;">
+            <div>
+              <label for="${uid}-insurer-other">Insurance company name</label>
+              <input class="field" id="${uid}-insurer-other" placeholder="e.g. Auto-Owners Insurance" data-insurer-other-input>
+            </div>
+          </div>
+          <div class="qw-nav">
+            <button class="link-btn" data-back="3">Back</button>
+            <button class="btn btn-primary" data-next="3" disabled>Continue</button>
+          </div>
+        </div>
+
+        <!-- STEP 4: LOCATION + CONTACT -->
+        <div class="qw-panel" data-panel="4">
           <h3 class="h-3" style="color:#fff;margin-bottom:14px;">Where and how should we reach you?</h3>
           <div class="field-row">
             <div>
@@ -209,18 +267,18 @@
             <div data-photo-name style="margin-top:6px;color:var(--cream);font-size:.85rem;"></div>
           </div>
           <div class="qw-nav">
-            <button class="link-btn" data-back="3">Back</button>
-            <button class="btn btn-primary" data-next="3">See my summary</button>
+            <button class="link-btn" data-back="4">Back</button>
+            <button class="btn btn-primary" data-next="4">See my summary</button>
           </div>
         </div>
 
-        <!-- STEP 4 -->
-        <div class="qw-panel" data-panel="4">
+        <!-- STEP 5: SUMMARY -->
+        <div class="qw-panel" data-panel="5">
           <h3 class="h-3" style="color:#fff;margin-bottom:14px;">Here's what we've got</h3>
           <div class="summary-card" data-summary></div>
           <p class="helper" style="margin-bottom:18px;">A specialist will confirm your quote and available appointment times within 15 minutes during business hours.</p>
           <div class="qw-nav">
-            <button class="link-btn" data-back="4">Start over</button>
+            <button class="link-btn" data-back="5">Start over</button>
             <a class="btn btn-primary" href="tel:16029803593">Or just call now</a>
           </div>
         </div>
@@ -236,16 +294,22 @@
     `;
 
     const root = mount.querySelector('.quote-widget');
-    const state = { step: 1, damage: null, vehicle: null, zip: '', name: '', phone: '', contact: 'Call', photo: null };
+    const state = {
+      step: 1, damage: null, vehicle: null, insurer: null,
+      zip: '', name: '', phone: '', contact: 'Call', photo: null
+    };
+    const STEP_COUNT = 5;
 
-    // ---- Step 1: damage grid ----
+    // ---- Step 1: damage grid (photo cards) ----
     const grid = root.querySelector('[data-damage-grid]');
     DAMAGE_TYPES.forEach(d => {
       const card = el(`
         <button type="button" class="damage-card" data-damage-id="${d.id}">
-          ${d.icon}
-          <div class="name">${d.name}</div>
-          <div class="sub">${d.sub}</div>
+          <div class="damage-card-media"><img src="${d.img}" alt="" loading="lazy"></div>
+          <div class="damage-card-body">
+            <div class="name">${d.name}</div>
+            <div class="sub">${d.sub}</div>
+          </div>
         </button>`);
       card.addEventListener('click', () => {
         grid.querySelectorAll('.damage-card').forEach(c => c.classList.remove('selected'));
@@ -265,6 +329,8 @@
         tab.classList.add('active');
         Object.values(vpanels).forEach(p => p.style.display = 'none');
         vpanels[tab.dataset.vtab].style.display = '';
+        // Re-check completion for the newly active tab
+        if (tab.dataset.vtab === 'manual') checkManualComplete();
       });
     });
 
@@ -300,38 +366,100 @@
       }
     }
 
-    // VIN decode
+    // ---- VIN decode (real, live) ----
     const vinInput = root.querySelector('[data-vin-input]');
-    root.querySelector('[data-decode-vin]').addEventListener('click', () => {
-      const vin = vinInput.value.trim().toUpperCase();
-      const resultBox = root.querySelector('[data-vin-result]');
-      if (vin.length !== 17) {
+    const vinError = root.querySelector('[data-vin-error]');
+    const vinButton = root.querySelector('[data-decode-vin]');
+
+    function setVinError(msg) {
+      if (msg) {
         vinInput.classList.add('invalid');
-        resultBox.innerHTML = '';
+        vinError.textContent = msg;
+      } else {
+        vinInput.classList.remove('invalid');
+      }
+    }
+
+    vinInput.addEventListener('input', () => {
+      vinInput.value = vinInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      setVinError(null);
+    });
+
+    vinButton.addEventListener('click', async () => {
+      const vin = vinInput.value.trim();
+      const resultBox = root.querySelector('[data-vin-result]');
+      resultBox.innerHTML = '';
+
+      const formatError = validateVINFormat(vin);
+      if (formatError) { setVinError(formatError); return; }
+      if (!vinChecksumValid(vin)) {
+        setVinError("That VIN's check digit doesn't add up — double-check for typos (VINs never contain I, O, or Q).");
         return;
       }
-      vinInput.classList.remove('invalid');
-      const decoded = mockDecodeVIN(vin);
-      if (decoded) {
-        state.vehicle = { ...decoded, source: 'vin', vin };
-        resultBox.innerHTML = `<div class="summary-card" style="margin:0;"><div class="summary-row"><span class="k">Decoded vehicle</span><span>${decoded.year} ${decoded.make} ${decoded.model} ${decoded.trim}</span></div></div>`;
-        root.querySelector('[data-next="2"]').disabled = false;
+      setVinError(null);
+
+      vinButton.disabled = true;
+      const originalLabel = vinButton.textContent;
+      vinButton.textContent = 'Decoding…';
+
+      try {
+        const decoded = await decodeVIN(vin);
+        if (!decoded) {
+          resultBox.innerHTML = `<p class="helper" style="color:#ff9d7a;">We couldn't find that VIN in the vehicle database. Try "Enter manually" instead, or we'll confirm it on the call.</p>`;
+        } else {
+          state.vehicle = { ...decoded, source: 'vin', vin };
+          resultBox.innerHTML = `<div class="summary-card" style="margin:0;">
+            <div class="summary-row"><span class="k">Decoded vehicle</span><span>${decoded.year} ${decoded.make} ${decoded.model}${decoded.trim ? ' ' + decoded.trim : ''}</span></div>
+          </div>`;
+          root.querySelector('[data-next="2"]').disabled = false;
+        }
+      } catch (err) {
+        resultBox.innerHTML = `<p class="helper" style="color:#ff9d7a;">We couldn't reach the vehicle database just now. Try again in a moment, or use "Enter manually".</p>`;
+      } finally {
+        vinButton.disabled = false;
+        vinButton.textContent = originalLabel;
       }
     });
 
-    // Plate lookup (mocked the same way)
+    // Plate lookup — approximate placeholder pending a DMV data agreement.
     root.querySelector('[data-decode-plate]').addEventListener('click', () => {
       const plate = root.querySelector('[data-plate-input]').value.trim();
       const stateAbbr = root.querySelector('[data-plate-state]').value;
       const resultBox = root.querySelector('[data-plate-result]');
       if (!plate) return;
-      const decoded = mockDecodeVIN(plate.padEnd(17, '0').slice(0, 17));
-      state.vehicle = { ...decoded, source: 'plate', plate, plateState: stateAbbr };
-      resultBox.innerHTML = `<div class="summary-card" style="margin:0;"><div class="summary-row"><span class="k">Matched vehicle</span><span>${decoded.year} ${decoded.make} ${decoded.model} ${decoded.trim}</span></div></div>`;
+      resultBox.innerHTML = `<div class="summary-card" style="margin:0;">
+        <div class="summary-row"><span class="k">Plate on file</span><span>${plate} · ${stateAbbr}</span></div>
+      </div>`;
+      state.vehicle = { year: null, make: null, model: null, trim: null, source: 'plate', plate, plateState: stateAbbr };
       root.querySelector('[data-next="2"]').disabled = false;
     });
 
-    // ---- Step 3: location + contact ----
+    // ---- Step 3: insurance ----
+    const insurerGrid = root.querySelector('[data-insurer-grid]');
+    const otherRow = root.querySelector('[data-insurer-other-row]');
+    const otherInput = root.querySelector('[data-insurer-other-input]');
+    INSURERS.forEach(name => {
+      const card = el(`
+        <button type="button" class="insurer-card" data-insurer="${name}">
+          ${SHIELD_ICON}
+          <span>${name}</span>
+        </button>`);
+      card.addEventListener('click', () => {
+        insurerGrid.querySelectorAll('.insurer-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        const isOther = name === 'Other insurer';
+        otherRow.style.display = isOther ? '' : 'none';
+        state.insurer = isOther ? (otherInput.value || 'Other insurer') : name;
+        root.querySelector('[data-next="3"]').disabled = isOther && !otherInput.value;
+      });
+      insurerGrid.appendChild(card);
+    });
+    otherInput.addEventListener('input', () => {
+      state.insurer = otherInput.value || 'Other insurer';
+      root.querySelector('[data-next="3"]').disabled = !otherInput.value;
+    });
+
+    // ---- Step 4: location + contact ----
     const zipInput = root.querySelector('[data-zip-input]');
     const cityGuess = root.querySelector('[data-city-guess]');
     zipInput.addEventListener('input', () => {
@@ -357,7 +485,7 @@
         p.classList.toggle('active', s === n);
         p.classList.toggle('done', s < n);
       });
-      if (n === 4) renderSummary();
+      if (n === STEP_COUNT) renderSummary();
       root.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     root.querySelectorAll('[data-next]').forEach(btn => {
@@ -365,18 +493,22 @@
     });
     root.querySelectorAll('[data-back]').forEach(btn => {
       btn.addEventListener('click', () => {
-        if (state.step === 4) { showStep(1); return; }
+        if (state.step === STEP_COUNT) { showStep(1); return; }
         showStep(Math.max(1, state.step - 1));
       });
     });
 
     function renderSummary() {
       const v = state.vehicle;
-      const vehicleLine = v ? `${v.year} ${v.make} ${v.model}${v.trim ? ' ' + v.trim : ''}` : 'Not provided';
+      let vehicleLine = 'Not provided';
+      if (v) {
+        vehicleLine = [v.year, v.make, v.model, v.trim].filter(Boolean).join(' ') || `Plate ${v.plate || ''} (${v.plateState || ''})`;
+      }
       const adas = v && likelyNeedsADAS(v.year);
       root.querySelector('[data-summary]').innerHTML = `
         <div class="summary-row"><span class="k">Damage</span><span>${state.damage ? state.damage.name : '—'}</span></div>
         <div class="summary-row"><span class="k">Vehicle</span><span>${vehicleLine}</span></div>
+        <div class="summary-row"><span class="k">Insurance</span><span>${state.insurer || '—'}</span></div>
         <div class="summary-row"><span class="k">Location</span><span>${state.zip || '—'}${guessCity(state.zip) ? ' · ' + guessCity(state.zip) : ''}</span></div>
         <div class="summary-row"><span class="k">Contact</span><span>${state.name || '—'} · ${state.phone || '—'} · prefers ${state.contact}</span></div>
         ${adas ? `<div class="adas-flag"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg> ADAS camera recalibration is likely needed for this vehicle</div>` : ''}
