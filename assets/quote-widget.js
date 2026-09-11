@@ -12,27 +12,29 @@
       id: 'front',
       name: 'Front Windshield',
       sub: 'Chip, crack, or full replace',
-      img: 'https://d8j0ntlcm91z4.cloudfront.net/user_38jUgr17I6kW2g7ysqUa9OUVLGY/hf_20260911_215600_9e94c9c0-fc6a-4f71-a443-f1a7db80aa83.png'
+      img: 'https://d8j0ntlcm91z4.cloudfront.net/user_38jUgr17I6kW2g7ysqUa9OUVLGY/hf_20260911_221740_19c6095d-c746-415c-b477-fd8759a83094.png'
     },
     {
       id: 'rear',
       name: 'Back Glass / Rear Window',
       sub: 'Rear windshield damage',
-      img: 'https://d8j0ntlcm91z4.cloudfront.net/user_38jUgr17I6kW2g7ysqUa9OUVLGY/hf_20260911_215600_f8f0ebd0-ce0d-4d71-a0e6-151f942338c3.png'
+      img: 'https://d8j0ntlcm91z4.cloudfront.net/user_38jUgr17I6kW2g7ysqUa9OUVLGY/hf_20260911_221741_c72a855b-1dff-465c-962c-f801cc1adb54.png'
     },
     {
       id: 'driver',
       name: 'Driver Side Window',
       sub: 'Door or quarter glass',
-      img: 'https://d8j0ntlcm91z4.cloudfront.net/user_38jUgr17I6kW2g7ysqUa9OUVLGY/hf_20260911_215600_2db5f880-ee1f-4978-846b-b8646b39d8d7.png'
+      img: 'https://d8j0ntlcm91z4.cloudfront.net/user_38jUgr17I6kW2g7ysqUa9OUVLGY/hf_20260911_221741_86fe8992-a075-422d-9e5d-f2ed67a0e2ba.png'
     },
     {
       id: 'passenger',
       name: 'Passenger Side Window',
       sub: 'Door or quarter glass',
-      img: 'https://d8j0ntlcm91z4.cloudfront.net/user_38jUgr17I6kW2g7ysqUa9OUVLGY/hf_20260911_215600_7471d393-3179-4077-89aa-1b50b53a8c8b.png'
+      img: 'https://d8j0ntlcm91z4.cloudfront.net/user_38jUgr17I6kW2g7ysqUa9OUVLGY/hf_20260911_221741_c00ea517-b31e-47c4-a5ce-6e999e769b07.png'
     }
   ];
+
+  const BADGE_SRC = 'assets/logo-emblem.png';
 
   // Generic shield icon used for every carrier tile — no trademarked
   // insurer logos are used here, only plain text names.
@@ -305,7 +307,10 @@
     DAMAGE_TYPES.forEach(d => {
       const card = el(`
         <button type="button" class="damage-card" data-damage-id="${d.id}">
-          <div class="damage-card-media"><img src="${d.img}" alt="" loading="lazy"></div>
+          <div class="damage-card-media">
+            <img class="damage-card-badge" src="${BADGE_SRC}" alt="" loading="lazy">
+            <img class="damage-card-art" src="${d.img}" alt="" loading="lazy">
+          </div>
           <div class="damage-card-body">
             <div class="name">${d.name}</div>
             <div class="sub">${d.sub}</div>
